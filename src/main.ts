@@ -19,8 +19,8 @@ Game.initGame = function(): void {
 	if (Game.elements.ui) {
 		Game.elements.ui.style.display = 'block';
 	}
-	if (Game.elements.menu) {
-		Game.elements.menu.style.display = 'flex';
+	if (Game.elements.menuScreen) {
+		Game.elements.menuScreen.style.display = 'flex';
 	}
 	Game.fruitsMerged = Array(Game.fruitSizes.length).fill(0);
 
@@ -36,21 +36,161 @@ Game.initGame = function(): void {
 	const restartButton = document.getElementById('game-end-link');
 	if (restartButton) {
 		restartButton.addEventListener('click', () => {
-			window.location.reload();
+			restartGame();
+		});
+	}
+
+	// Settings button handler
+	const settingsButton = document.getElementById('btn-settings');
+	const settingsPopup = document.getElementById('popup-settings');
+	const audioVolumeSlider = document.getElementById('audio-volume') as HTMLInputElement;
+	const audioVolumeValue = document.getElementById('audio-volume-value');
+	const musicVolumeSlider = document.getElementById('music-volume') as HTMLInputElement;
+	const musicVolumeValue = document.getElementById('music-volume-value');
+	const resumeBtn = document.getElementById('btn-resume');
+	const restartFromSettingsBtn = document.getElementById('btn-restart');
+	
+	if (settingsButton && settingsPopup) {
+		settingsButton.addEventListener('click', () => {
+			settingsPopup.style.display = 'flex';
+			Runner.stop(runner);
+			// Update slider values
+			if (audioVolumeSlider && audioVolumeValue) {
+				audioVolumeSlider.value = String(Math.round(Game.audioVolume * 100));
+				audioVolumeValue.textContent = `${Math.round(Game.audioVolume * 100)}%`;
+			}
+			if (musicVolumeSlider && musicVolumeValue) {
+				musicVolumeSlider.value = String(Math.round(Game.musicVolume * 100));
+				musicVolumeValue.textContent = `${Math.round(Game.musicVolume * 100)}%`;
+			}
+		});
+	}
+	
+	// Audio Volume Slider
+	if (audioVolumeSlider && audioVolumeValue) {
+		audioVolumeSlider.addEventListener('input', () => {
+			const volume = parseInt(audioVolumeSlider.value) / 100;
+			Game.audioVolume = volume;
+			localStorage.setItem('audioVolume', String(volume));
+			audioVolumeValue.textContent = `${audioVolumeSlider.value}%`;
+		});
+	}
+	
+	// Music Volume Slider
+	if (musicVolumeSlider && musicVolumeValue) {
+		musicVolumeSlider.addEventListener('input', () => {
+			const volume = parseInt(musicVolumeSlider.value) / 100;
+			Game.musicVolume = volume;
+			Game.bgm.volume = volume;
+			localStorage.setItem('musicVolume', String(volume));
+			musicVolumeValue.textContent = `${musicVolumeSlider.value}%`;
+			
+			// Start or stop BGM based on volume
+			if (volume > 0 && Game.bgm.paused && Game.stateIndex !== GameStates.MENU) {
+				Game.bgm.play().catch(() => {});
+			} else if (volume === 0) {
+				Game.bgm.pause();
+			}
+		});
+	}
+	
+	// Resume button (close settings and resume game)
+	if (resumeBtn && settingsPopup) {
+		resumeBtn.addEventListener('click', () => {
+			settingsPopup.style.display = 'none';
+			Runner.run(runner, engine);
+		});
+	}
+	
+	// Restart button in settings
+	if (restartFromSettingsBtn) {
+		restartFromSettingsBtn.addEventListener('click', () => {
+			if (settingsPopup) {
+				settingsPopup.style.display = 'none';
+			}
+			restartGame();
+		});
+	}
+
+	// Info button handler
+	const infoButton = document.getElementById('btn-info');
+	const infoPopup = document.getElementById('popup-info');
+	const closeInfo = document.getElementById('close-info');
+	if (infoButton && infoPopup && closeInfo) {
+		infoButton.addEventListener('click', () => {
+			infoPopup.style.display = 'flex';
+			Runner.stop(runner);
+		});
+		closeInfo.addEventListener('click', () => {
+			infoPopup.style.display = 'none';
+			Runner.run(runner, engine);
 		});
 	}
 };
+
+/**
+ * Restarts the game by clearing all fruits and resetting state
+ */
+function restartGame(): void {
+	// Remove all non-static bodies (fruits) from the world
+	const allBodies = Composite.allBodies(engine.world);
+	const dynamicBodies = allBodies.filter(body => !body.isStatic);
+	Composite.remove(engine.world, dynamicBodies);
+
+	// Reset game state
+	Game.score = 0;
+	Game.fruitsMerged = Array(Game.fruitSizes.length).fill(0);
+	Game.calculateScore();
+
+	// Hide end screen
+	if (Game.elements.end) {
+		Game.elements.end.style.display = 'none';
+	}
+
+	// Reset preview ball
+	Game.elements.previewBall = Game.generateFruitBody(Game.width / 2, previewBallHeight, 0, { isStatic: true });
+	Composite.add(engine.world, Game.elements.previewBall);
+
+	// Set initial fruit sizes
+	Game.setNextFruitSize();
+	Game.currentFruitSize = Game.nextFruitSize;
+	Game.setNextFruitSize();
+
+	// Re-enable runner and set state to ready
+	runner.enabled = true;
+	Runner.run(runner, engine);
+
+	setTimeout(() => {
+		Game.stateIndex = GameStates.READY;
+	}, 250);
+}
 
 /**
  * Start the game
  * Transitions from menu to gameplay, sets up event handlers
  */
 Game.startGame = function(): void {
-	Game.sounds.click.play();
+	if (Game.audioVolume > 0) {
+		const clickSound = Game.sounds.click.cloneNode() as HTMLAudioElement;
+		clickSound.volume = Game.audioVolume;
+		clickSound.play().catch(() => {});
+	}
 
-	// Hide menu
-	if (Game.elements.menu) {
-		Game.elements.menu.style.display = 'none';
+	// Start background music
+	if (Game.musicVolume > 0) {
+		Game.bgm.volume = Game.musicVolume;
+		Game.bgm.play().catch(() => {});
+	}
+
+	// Hide menu screen
+	if (Game.elements.menuScreen) {
+		Game.elements.menuScreen.style.display = 'none';
+	}
+
+	// Show game screen
+	const gameWrapper = document.querySelector('.game-wrapper') as HTMLElement;
+	if (gameWrapper) {
+		gameWrapper.style.display = 'flex';
 	}
 
 	Composite.add(engine.world, gameStatics);
@@ -114,7 +254,8 @@ Game.startGame = function(): void {
 			let newSize = fruitA.sizeIndex + 1;
 
 			// Go back to smallest size if max fruit reached
-			if ((bodyA.circleRadius || 0) >= Game.fruitSizes[Game.fruitSizes.length - 1].radius) {
+			const maxRadius = Game.fruitSizes[Game.fruitSizes.length - 1].radius;
+			if (maxRadius && (bodyA.circleRadius || 0) >= maxRadius) {
 				newSize = 0;
 			}
 
@@ -129,7 +270,11 @@ Game.startGame = function(): void {
 			fruitB.popped = true;
 
 			// Play merge sound
-			Game.sounds[`pop${fruitA.sizeIndex}`].play();
+			if (Game.audioVolume > 0) {
+				const popSound = Game.sounds[`pop${fruitA.sizeIndex}`].cloneNode() as HTMLAudioElement;
+				popSound.volume = Game.audioVolume;
+				popSound.play().catch(() => {});
+			}
 			
 			// Remove old fruits and add merged fruit
 			Composite.remove(engine.world, [bodyA, bodyB]);
@@ -185,7 +330,11 @@ Game.loseGame = function(): void {
 Game.addFruit = function(x: number): void {
 	if (Game.stateIndex !== GameStates.READY) return;
 
-	Game.sounds.click.play();
+	if (Game.audioVolume > 0) {
+		const clickSound = Game.sounds.click.cloneNode() as HTMLAudioElement;
+		clickSound.volume = Game.audioVolume;
+		clickSound.play().catch(() => {});
+	}
 
 	Game.stateIndex = GameStates.DROP;
 	const latestFruit = Game.generateFruitBody(x, previewBallHeight, Game.currentFruitSize);
@@ -212,66 +361,50 @@ Game.addFruit = function(x: number): void {
 };
 
 /**
- * Resize canvas to fit viewport responsively
- * Canvas stays within game-box container, preventing stretching
+ * Resize canvas to fit viewport with scaling
+ * Canvas internal size is fixed (640x1080), visual size scales
+ * Header and footer flex to fill remaining vertical space
  */
 const resizeCanvas = (): void => {
-	// Get the game box container
-	const gameBox = document.querySelector('.game-box') as HTMLElement;
-	if (!gameBox) return;
-
-	// Use visualViewport for better mobile support, fallback to window dimensions
+	// Use visualViewport for better mobile support
 	const screenWidth = window.visualViewport?.width ?? window.innerWidth;
 	const screenHeight = window.visualViewport?.height ?? window.innerHeight;
-	const gameAspectRatio = Game.width / Game.height; // 640 / 960 = 0.667
 	
-	// Define constraints
-	const minCanvasWidth = 320; // Minimum width for mobile
-	const maxCanvasWidth = 640; // Maximum width for desktop
-
-	// Get available space within the box
-	const boxRect = gameBox.getBoundingClientRect();
-	const availableWidth = Math.min(boxRect.width, screenWidth);
-	const availableHeight = Math.min(boxRect.height, screenHeight);
-
-	// Calculate canvas size based on available space
-	let newHeight = availableHeight;
-	let newWidth = newHeight * gameAspectRatio;
-
-	// Apply width constraints
-	if (newWidth < minCanvasWidth) {
-		newWidth = minCanvasWidth;
-		newHeight = newWidth / gameAspectRatio;
+	// Fixed game dimensions (internal resolution)
+	const gameWidth = 640;
+	const gameHeight = 1080;
+	
+	// Calculate scale to fit screen (leave space for header min-height)
+	const minHeaderSpace = 60; // min-height for header only
+	const availableHeight = screenHeight - minHeaderSpace;
+	const scaleX = screenWidth / gameWidth;
+	const scaleY = availableHeight / gameHeight;
+	const scale = Math.min(scaleX, scaleY); // Use available space
+	
+	// Calculate visual canvas size
+	const visualWidth = gameWidth * scale;
+	const visualHeight = gameHeight * scale;
+	
+	// Apply visual size to canvas
+	render.canvas.style.width = `${visualWidth}px`;
+	render.canvas.style.height = `${visualHeight}px`;
+	
+	// Scale menu screen to match (flexbox handles height automatically)
+	const menuScreen = document.getElementById('menu-screen');
+	if (menuScreen) {
+		menuScreen.style.width = `${visualWidth}px`;
 	}
 	
-	// Constrain width to max
-	if (newWidth > maxCanvasWidth) {
-		newWidth = Math.min(maxCanvasWidth, availableWidth);
+	// Scale header to match canvas width
+	const gameHeader = document.getElementById('game-header');
+	if (gameHeader) {
+		gameHeader.style.width = `${visualWidth}px`;
 	}
-
-	// Only reduce if width exceeds available width
-	if (newWidth > availableWidth) {
-		newWidth = availableWidth;
-		newHeight = newWidth / gameAspectRatio;
-	}
-
-	// Ensure height fits in available space
-	if (newHeight > availableHeight) {
-		newHeight = availableHeight;
-		newWidth = newHeight * gameAspectRatio;
-	}
-
-	// Calculate scale for UI
-	const scaleX = newWidth / Game.width;
-	const scaleY = newHeight / Game.height;
-	const scale = Math.min(scaleX, scaleY);
-
-	render.canvas.style.width = `${newWidth}px`;
-	render.canvas.style.height = `${newHeight}px`;
-
+	
+	// UI overlay scales the same
 	if (Game.elements.ui) {
-		Game.elements.ui.style.width = `${Game.width}px`;
-		Game.elements.ui.style.height = `${Game.height}px`;
+		Game.elements.ui.style.width = `${gameWidth}px`;
+		Game.elements.ui.style.height = `${gameHeight}px`;
 		Game.elements.ui.style.transform = `scale(${scale})`;
 		Game.elements.ui.style.transformOrigin = 'top left';
 	}

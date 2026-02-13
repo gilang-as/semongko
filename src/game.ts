@@ -32,7 +32,7 @@ function createCircleVertices(radius: number, sides: number = 32): Matter.Vector
  */
 export const Game: GameInterface = {
 	width: 640,
-	height: 960,
+	height: 1080,
 	elements: {
 		canvas: document.getElementById('game-canvas'),
 		ui: document.getElementById('game-ui'),
@@ -40,9 +40,9 @@ export const Game: GameInterface = {
 		end: document.getElementById('game-end-container'),
 		endTitle: document.getElementById('game-end-title'),
 		statusValue: document.getElementById('game-highscore-value'),
-		nextFruitImg: document.getElementById('game-next-fruit') as HTMLImageElement | null,
+		nextFruitImg: document.getElementById('game-next-fruit-header') as HTMLImageElement | null,
 		previewBall: null,
-		menu: document.getElementById('game-menu-container'),
+		menuScreen: document.getElementById('menu-screen'),
 	},
 	cache: { highscore: 0 },
 	sounds: {
@@ -59,6 +59,13 @@ export const Game: GameInterface = {
 		pop9: new Audio('./assets/pop9.mp3'),
 		pop10: new Audio('./assets/pop10.mp3'),
 	},
+	bgm: (() => {
+		const music = new Audio('./assets/music/bgm/music.webm');
+		music.loop = true;
+		return music;
+	})(),
+	audioVolume: parseFloat(localStorage.getItem('audioVolume') || '0.7'),
+	musicVolume: parseFloat(localStorage.getItem('musicVolume') || '0.5'),
 
 	stateIndex: GameStates.MENU,
 	score: 0,
@@ -77,17 +84,17 @@ export const Game: GameInterface = {
 	},
 
 	fruitSizes: [
-		{ image: './assets/img/circle0.png',  textureSize: 1024, scoreValue: 1,  scale: 0.047 },
-		{ image: './assets/img/circle1.png',  textureSize: 150,  scoreValue: 3,  scale: 0.426 },
-		{ image: './assets/img/circle2.png',  textureSize: 228,  scoreValue: 6,  scale: 0.351 },
-		{ image: './assets/img/circle3.png',  textureSize: 225,  scoreValue: 10, scale: 0.498 },
-		{ image: './assets/img/circle4.png',  textureSize: 286,  scoreValue: 15, scale: 0.448 },
-		{ image: './assets/img/circle5.png',  textureSize: 350,  scoreValue: 21, scale: 0.411 },
-		{ image: './assets/img/circle6.png',  textureSize: 418,  scoreValue: 28, scale: 0.402 },
-		{ image: './assets/img/circle7.png',  textureSize: 484,  scoreValue: 36, scale: 0.397 },
-		{ image: './assets/img/circle8.png',  textureSize: 609,  scoreValue: 45, scale: 0.420 },
-		{ image: './assets/img/circle9.png',  textureSize: 661,  scoreValue: 55, scale: 0.484 },
-		{ image: './assets/img/circle10.png', textureSize: 778,  scoreValue: 66, scale: 0.493 },
+		{ image: './assets/img/circle0.png',  textureSize: 1024, scoreValue: 2,  scale: 0.047 },
+		{ image: './assets/img/circle1.png',  textureSize: 150,  scoreValue: 5,  scale: 0.426 },
+		{ image: './assets/img/circle2.png',  textureSize: 228,  scoreValue: 9,  scale: 0.351 },
+		{ image: './assets/img/circle3.png',  textureSize: 225,  scoreValue: 13, scale: 0.498 },
+		{ image: './assets/img/circle4.png',  textureSize: 286,  scoreValue: 18, scale: 0.448 },
+		{ image: './assets/img/circle5.png',  textureSize: 350,  scoreValue: 25, scale: 0.411 },
+		{ image: './assets/img/circle6.png',  textureSize: 418,  scoreValue: 34, scale: 0.402 },
+		{ image: './assets/img/circle7.png',  textureSize: 484,  scoreValue: 41, scale: 0.397 },
+		{ image: './assets/img/circle8.png',  textureSize: 609,  scoreValue: 49, scale: 0.420 },
+		{ image: './assets/img/circle9.png',  textureSize: 661,  scoreValue: 58, scale: 0.484 },
+		{ image: './assets/img/circle10.png', textureSize: 778,  scoreValue: 65, scale: 0.493 },
 	],
 	
 	currentFruitSize: 0,
@@ -174,7 +181,6 @@ export const Game: GameInterface = {
 		const physicsScale = config.physicsScale ?? config.scale;  // For physics body (defaults to displayScale)
 		
 		// Calculate sizes
-		const displaySize = textureSize * displayScale;  // Visual size
 		const physicsSize = textureSize * physicsScale;  // Physics body size
 		const radius = physicsSize / 2;  // Physics uses physicsScale
 		

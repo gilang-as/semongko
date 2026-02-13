@@ -29,7 +29,7 @@ export interface GameElements {
 	statusValue: HTMLElement | null;
 	nextFruitImg: HTMLImageElement | null;
 	previewBall: Matter.Body | null;
-	menu: HTMLElement | null;
+	menuScreen: HTMLElement | null;
 }
 
 export interface FruitBody extends Matter.Body {
@@ -50,6 +50,9 @@ export interface GameInterface {
 	elements: GameElements;
 	cache: GameCache;
 	sounds: Record<string, HTMLAudioElement>;
+	bgm: HTMLAudioElement;
+	audioVolume: number;
+	musicVolume: number;
 	stateIndex: GameStates;
 	score: number;
 	fruitsMerged: number[];

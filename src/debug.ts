@@ -1,22 +1,26 @@
-import { Game } from './game.ts';
-import Matter from 'matter-js';
+import { Game } from './game';
 
-let fruitGrid;
-let zoomSlider;
-let zoomValue;
-let zoomInBtn;
-let zoomOutBtn;
+let fruitGrid: HTMLElement | null;
+let zoomSlider: HTMLInputElement | null;
+let zoomValue: HTMLElement | null;
+let zoomInBtn: HTMLButtonElement | null;
+let zoomOutBtn: HTMLButtonElement | null;
 
-let currentZoom = 1;
+let currentZoom: number = 1;
+
+interface Vertex {
+	x: number;
+	y: number;
+}
 
 // Initialize when DOM is ready
-function initialize() {
+function initialize(): void {
 	// Get DOM elements
 	fruitGrid = document.getElementById('fruitGrid');
-	zoomSlider = document.getElementById('zoomSlider');
+	zoomSlider = document.getElementById('zoomSlider') as HTMLInputElement;
 	zoomValue = document.getElementById('zoomValue');
-	zoomInBtn = document.getElementById('zoomIn');
-	zoomOutBtn = document.getElementById('zoomOut');
+	zoomInBtn = document.getElementById('zoomIn') as HTMLButtonElement;
+	zoomOutBtn = document.getElementById('zoomOut') as HTMLButtonElement;
 	
 	if (!fruitGrid) {
 		console.error('fruitGrid element not found!');
@@ -38,10 +42,13 @@ if (document.readyState === 'loading') {
 	initialize();
 }
 
-function setupEventListeners() {
+function setupEventListeners(): void {
+	if (!zoomSlider || !zoomInBtn || !zoomOutBtn) return;
+
 	// Zoom controls
-	zoomSlider.addEventListener('input', (e) => {
-		updateZoom(parseFloat(e.target.value));
+	zoomSlider.addEventListener('input', (e: Event) => {
+		const target = e.target as HTMLInputElement;
+		updateZoom(parseFloat(target.value));
 	});
 
 	zoomInBtn.addEventListener('click', () => {
@@ -56,18 +63,18 @@ function setupEventListeners() {
 }
 
 // Zoom controls
-function updateZoom(zoom) {
+function updateZoom(zoom: number): void {
 	currentZoom = zoom;
-	zoomSlider.value = zoom;
-	zoomValue.textContent = Math.round(zoom * 100) + '%';
+	if (zoomSlider) zoomSlider.value = zoom.toString();
+	if (zoomValue) zoomValue.textContent = Math.round(zoom * 100) + '%';
 	
 	// Redraw all fruits with new zoom
 	redrawAllFruits();
 }
 
 // Helper function to create circle vertices (same as in game.ts)
-function createCircleVertices(radius, sides = 32) {
-	const vertices = [];
+function createCircleVertices(radius: number, sides: number = 32): Vertex[] {
+	const vertices: Vertex[] = [];
 	const angleStep = (2 * Math.PI) / sides;
 	
 	for (let i = 0; i < sides; i++) {
@@ -82,8 +89,16 @@ function createCircleVertices(radius, sides = 32) {
 }
 
 // Draw vertices on canvas comparing input (from radius) vs physics engine output
-function drawVertices(canvas, expectedVertices, actualVertices, radius, zoom = 1) {
+function drawVertices(
+	canvas: HTMLCanvasElement,
+	expectedVertices: Vertex[],
+	actualVertices: Vertex[],
+	_radius: number | undefined,
+	zoom: number = 1
+): void {
 	const ctx = canvas.getContext('2d');
+	if (!ctx) return;
+
 	const centerX = canvas.width / 2;
 	const centerY = canvas.height / 2;
 	
@@ -137,7 +152,9 @@ function drawVertices(canvas, expectedVertices, actualVertices, radius, zoom = 1
 	ctx.stroke();
 }
 
-function createFruitCard(fruit, index, zoom) {
+function createFruitCard(fruit: any, index: number, zoom: number): void {
+	if (!fruitGrid) return;
+
 	const card = document.createElement('div');
 	card.className = 'fruit-card';
 	
@@ -263,20 +280,23 @@ function createFruitCard(fruit, index, zoom) {
 	setupCardControls(card, index);
 	
 	// Draw input vertices (from radius) vs physics engine output on canvas
-	const canvas = card.querySelector('.vertices-canvas');
-	drawVertices(canvas, expectedVertices, actualVertices, fruit.radius, zoom);
+	const canvas = card.querySelector('.vertices-canvas') as HTMLCanvasElement;
+	if (canvas) {
+		drawVertices(canvas, expectedVertices, actualVertices, fruit.radius, zoom);
+	}
 }
 
-function setupCardControls(card, fruitIndex) {
+function setupCardControls(card: HTMLElement, _fruitIndex: number): void {
 	const buttons = card.querySelectorAll('.control-btn');
 	const inputs = card.querySelectorAll('.value-input');
 	
 	buttons.forEach(btn => {
 		btn.addEventListener('click', () => {
-			const fruit = parseInt(btn.dataset.fruit);
-			const field = btn.dataset.field;
-			const isPlus = btn.classList.contains('plus');
-			const input = card.querySelector(`input[data-fruit="${fruit}"][data-field="${field}"]`);
+			const button = btn as HTMLButtonElement;
+			const fruit = parseInt(button.dataset.fruit || '0');
+			const field = button.dataset.field || '';
+			const isPlus = button.classList.contains('plus');
+			const input = card.querySelector(`input[data-fruit="${fruit}"][data-field="${field}"]`) as HTMLInputElement;
 			const currentValue = parseFloat(input.value);
 			
 			let step = 1;
@@ -296,7 +316,7 @@ function setupCardControls(card, fruitIndex) {
 				if (field === 'scale' || field === 'physicsScale') {
 					input.value = newValue.toFixed(3);
 				} else {
-					input.value = Math.round(newValue);
+					input.value = Math.round(newValue).toString();
 				}
 				updateFruitValue(fruit, field, newValue);
 			}
@@ -305,21 +325,22 @@ function setupCardControls(card, fruitIndex) {
 	
 	inputs.forEach(input => {
 		input.addEventListener('change', () => {
-			const fruit = parseInt(input.dataset.fruit);
-			const field = input.dataset.field;
-			let value = parseFloat(input.value);
-			const min = parseFloat(input.min);
-			const max = parseFloat(input.max);
+			const inputElement = input as HTMLInputElement;
+			const fruit = parseInt(inputElement.dataset.fruit || '0');
+			const field = inputElement.dataset.field || '';
+			let value = parseFloat(inputElement.value);
+			const min = parseFloat(inputElement.min);
+			const max = parseFloat(inputElement.max);
 			
 			// Validate
 			if (value < min) value = min;
 			if (value > max) value = max;
 			
 			if (field === 'scale' || field === 'physicsScale') {
-				input.value = value.toFixed(3);
+				inputElement.value = value.toFixed(3);
 			} else {
 				value = Math.round(value);
-				input.value = value;
+				inputElement.value = value.toString();
 			}
 			
 			updateFruitValue(fruit, field, value);
@@ -327,7 +348,7 @@ function setupCardControls(card, fruitIndex) {
 	});
 }
 
-function updateFruitValue(fruitIndex, field, value) {
+function updateFruitValue(fruitIndex: number, field: string, value: number): void {
 	// Update the game configuration
 	if (field === 'scale') {
 		Game.fruitSizes[fruitIndex].scale = value;
@@ -343,7 +364,7 @@ function updateFruitValue(fruitIndex, field, value) {
 	redrawAllFruits();
 }
 
-function redrawAllFruits() {
+function redrawAllFruits(): void {
 	if (!fruitGrid) {
 		console.error('fruitGrid is null in redrawAllFruits');
 		return;

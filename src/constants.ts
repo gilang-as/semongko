@@ -1,8 +1,8 @@
 // Game Constants
 export const wallPad: number = 64;
-export const loseHeight: number = 84;
+export const loseHeight: number = 144;
 export const statusBarHeight: number = 48;
-export const previewBallHeight: number = 32;
+export const previewBallHeight: number = 70;
 
 export const friction = {
 	friction: 0.006,
@@ -12,4 +12,4 @@ export const friction = {
 };
 
 export const GAME_WIDTH = 640;
-export const GAME_HEIGHT = 960;
+export const GAME_HEIGHT = 1080;

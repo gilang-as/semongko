@@ -6,360 +6,94 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
-  <title>Suika / Watermelon Game Clone</title>
-  <meta property="og:title" content="Suika / Watermelon Game Clone" />
+  <title>Semongko - Watermelon Game Clone</title>
+  <meta property="og:title" content="Semongko - Watermelon Game Clone" />
   <meta property="og:image" content="https://tombofry.github.io/suika-game/screenshot.png" />
-  <style>
-    @import url(https://fonts.bunny.net/css?family=azeret-mono:400,700,900);
-
-    :root {
-      --col-bg: #FFD59D;
-      --col-bg-light: #FFDCAE;
-      --col-bg-lighter: #FFEEDB;
-      --col-primary: #FF5300;
-      --col-primary-dark: #FF2700;
-      --col-primary-light: #FF8800;
-      --col-shadow: rgba(0, 0, 0, 0.25);
-      --col-white: #fff;
-    }
-
-    * {
-      box-sizing: border-box;
-      padding: 0;
-      margin: 0;
-      line-height: 1;
-    }
-
-    html {
-      height: 100%;
-      height: -webkit-fill-available;
-      width: 100%;
-    }
-
-    body {
-      background-color: var(--col-bg);
-      font-family: 'Azeret Mono', sans-serif;
-      overflow: hidden;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100%;
-      height: 100%;
-      height: -webkit-fill-available;
-      margin: 0;
-      padding: 0;
-      /* Prevent pull-to-refresh on mobile */
-      overscroll-behavior: none;
-      /* Prevent text selection on touch devices */
-      -webkit-user-select: none;
-      user-select: none;
-      /* Improve touch responsiveness */
-      touch-action: manipulation;
-    }
-
-    .container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-    }
-
-    .game-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    #game-header {
-      background: linear-gradient(180deg, var(--col-primary) 0%, var(--col-primary-dark) 100%);
-      padding: 16px 24px;
-      border-radius: 16px 16px 0 0;
-      box-shadow: 0 4px 12px var(--col-shadow);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      min-width: 640px;
-    }
-
-    #game-score {
-      font-size: 48px;
-      font-weight: 900;
-      color: var(--col-white);
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .score-label {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--col-bg-lighter);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-
-    #game-canvas {
-      position: relative;
-      touch-action: none;
-      border-radius: 0 0 16px 16px;
-      overflow: hidden;
-    }
-
-    /* Responsive adjustments for mobile devices */
-    @media (max-width: 768px) {
-      body {
-        font-size: 14px;
-      }
-    }
-
-    @media (orientation: landscape) and (max-height: 500px) {
-      /* Adjust for landscape mobile */
-      .container {
-        align-items: flex-start;
-        padding-top: 10px;
-      }
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #game-canvas {
-      position: relative;
-    }
-
-    #game-ui {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      user-select: none;
-      font-weight: 700;
-      display: none;
-      transform-origin: top left;
-    }
-
-    #game-lose-line {
-      position: absolute;
-      width: 100%;
-      top: 84px;
-      border-bottom: 3px dotted #FF5300;
-      pointer-events: none;
-      opacity: 0.6;
-    }
-
-    #game-menu-container {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, var(--col-primary) 0%, var(--col-primary-dark) 100%);
-      z-index: 100;
-    }
-
-    #game-menu {
-      text-align: center;
-      padding: 48px;
-    }
-
-    #game-menu-title {
-      font-weight: 900;
-      font-size: 64px;
-      color: var(--col-white);
-      text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-      margin-bottom: 16px;
-    }
-
-    #game-menu-subtitle {
-      font-size: 24px;
-      color: var(--col-bg-lighter);
-      margin-bottom: 48px;
-      font-weight: 700;
-    }
-
-    #btn-start-game {
-      display: inline-block;
-      color: var(--col-primary-dark);
-      font-size: 32px;
-      font-weight: 900;
-      text-decoration: none;
-      background-color: var(--col-white);
-      padding: 24px 64px;
-      border-radius: 16px;
-      box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-      border: none;
-      pointer-events: initial;
-      transition: all 0.1s;
-    }
-
-    #btn-start-game:hover {
-      background-color: var(--col-bg-lighter);
-      box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-      transform: translate(-2px, -2px);
-    }
-
-    #btn-start-game:active {
-      box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
-      transform: translate(3px, 3px);
-    }
-
-    #game-end-container {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-items: center;
-      background-color: var(--col-shadow);
-    }
-
-    #game-end {
-      text-align: center;
-      padding: 32px 48px;
-      background-color: var(--col-bg-lighter);
-      border: 5px solid var(--col-primary);
-      box-shadow: 0 4px 32px var(--col-shadow);
-      border-radius: 32px;
-      margin: 0 auto;
-      pointer-events: initial;
-      user-select: initial;
-    }
-
-    #game-end-title {
-      font-weight: 700;
-      font-size: 48px;
-      color: var(--col-primary-dark);
-    }
-
-    #game-end-link {
-      display: inline-block;
-      color: var(--col-white);
-      font-size: 24px;
-      text-decoration: none;
-      background-color: var(--col-primary-light);
-      margin-top: 16px;
-      padding: 16px;
-      border-radius: 16px;
-      box-shadow: 4px 4px 0 var(--col-shadow);
-      cursor: pointer;
-      border: none;
-      pointer-events: initial;
-      font-weight: 700;
-      font-family: 'Azeret Mono', sans-serif;
-    }
-
-    #game-end-link:hover {
-      background-color: var(--col-primary);
-      box-shadow: 6px 6px 0 var(--col-shadow);
-    }
-
-    #game-end-link:active {
-      box-shadow: 2px 2px 0 var(--col-shadow);
-      transform: translate(2px, 2px);
-    }
-
-    #game-status {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 48px;
-      background-color: var(--col-bg-lighter);
-      display: flex;
-      align-items: center;
-    }
-
-    .game-status-item {
-      display: flex;
-      line-height: 1;
-      align-items: center;
-      margin-left: 24px;
-    }
-
-    .game-status-label {
-      color: #666;
-      font-size: 16px;
-      margin-right: 8px;
-    }
-
-    #game-next-fruit {
-      width: 24px;
-      height: 24px;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      #game-header {
-        min-width: 100%;
-        padding: 12px 16px;
-      }
-
-      #game-score {
-        font-size: 36px;
-      }
-
-      #game-highscore-value {
-        font-size: 24px !important;
-      }
-
-      .score-label {
-        font-size: 12px;
-      }
-
-      #game-menu-title {
-        font-size: 48px;
-      }
-
-      #game-menu-subtitle {
-        font-size: 18px;
-      }
-
-      #btn-start-game {
-        font-size: 24px;
-        padding: 20px 48px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
   <div class="container">
+    <!-- Menu Screen -->
+    <div id="menu-screen">
+      <div id="game-menu-container">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="font-size: 16px; font-weight: 700; color: var(--col-bg-lighter); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Highscore</div>
+          <div id="game-highscore-value" style="font-size: 48px; font-weight: 900; color: var(--col-white); text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">0</div>
+        </div>
+        <div id="game-menu-title">SEMONGKO</div>
+        <div id="game-menu-subtitle">Watermelon Merging Puzzle</div>
+        <button id="btn-start-game">START GAME</button>
+      </div>
+    </div>
+    
+    <!-- Game Screen -->
     <div class="game-wrapper">
       <div id="game-header">
-        <div>
-          <div class="score-label">Score</div>
+        <div class="header-left">
+          <div class="header-icon" id="btn-settings" title="Settings">
+            <img src="./assets/icons/gear.svg" alt="Settings" />
+          </div>
+          <div class="header-icon" id="btn-info" title="Info">
+            <img src="./assets/icons/info.svg" alt="Info" />
+          </div>
+        </div>
+        <div class="header-center">
           <div id="game-score">0</div>
         </div>
-        <div style="text-align: right;">
-          <div class="score-label">Highscore</div>
-          <div id="game-highscore-value" style="font-size: 32px; font-weight: 900; color: var(--col-white);">0</div>
+        <div class="header-right">
+          <img id="game-next-fruit-header" src="./assets/img/circle0.png" alt="Next" />
         </div>
       </div>
       <div id="game-canvas">
         <div id="game-ui">
-          <div id="game-menu-container">
-            <div id="game-menu">
-              <div id="game-menu-title">SUIKA GAME</div>
-              <div id="game-menu-subtitle">Watermelon Merging Puzzle</div>
-              <button id="btn-start-game">START GAME</button>
+          <div id="game-lose-line"></div>
+          
+          <!-- Settings Popup -->
+          <div id="popup-settings" class="game-popup">
+            <div class="popup-content">
+              <div class="popup-title">Settings</div>
+              <div class="popup-body">
+                <div class="settings-option">
+                  <span class="settings-label">Audio</span>
+                  <div class="volume-control">
+                    <input type="range" min="0" max="100" value="70" class="volume-slider" id="audio-volume">
+                    <span class="volume-value" id="audio-volume-value">70%</span>
+                  </div>
+                </div>
+                <div class="settings-option">
+                  <span class="settings-label">Music</span>
+                  <div class="volume-control">
+                    <input type="range" min="0" max="100" value="50" class="volume-slider" id="music-volume">
+                    <span class="volume-value" id="music-volume-value">50%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-actions">
+                <button class="settings-btn" id="btn-resume">Resume</button>
+                <button class="settings-btn danger" id="btn-restart">Restart</button>
+              </div>
             </div>
           </div>
-          <div id="game-lose-line"></div>
+          
+          <!-- Info Popup -->
+          <div id="popup-info" class="game-popup">
+            <div class="popup-content">
+              <div class="popup-title">How to Play</div>
+              <div class="popup-body">
+                <p><strong>SEMONGKO</strong> - Watermelon Merging Puzzle</p>
+                <p>Drop fruits and merge same ones to create bigger fruits!</p>
+                <p>• Tap/Click to drop fruit</p>
+                <p>• Match 2 same fruits to merge</p>
+                <p>• Don't let fruits reach the top!</p>
+              </div>
+              <button class="popup-close" id="close-info">Close</button>
+            </div>
+          </div>
+          
           <div id="game-end-container">
             <div id="game-end">
               <div id="game-end-title">Game Over!</div>
               <button id="game-end-link">Play Again</button>
-            </div>
-          </div>
-
-          <div id="game-status">
-            <div class="game-status-item">
-              <div class="game-status-label">Next</div>
-              <img id="game-next-fruit" src="./assets/img/circle0.png" />
             </div>
           </div>
         </div>

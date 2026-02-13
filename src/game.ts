@@ -6,16 +6,23 @@ import { rand } from './utils';
 const { Bodies } = Matter;
 
 /**
+ * Detect if device is mobile
+ */
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+/**
  * Creates vertices for a circular polygon approximation
  * @param radius - The radius of the circle
- * @param sides - Number of sides for the polygon (default: 32)
+ * @param sides - Number of sides for the polygon (default: 32 for desktop, 12 for mobile)
  * @returns Array of vertices centered around (0,0)
  */
-function createCircleVertices(radius: number, sides: number = 32): Matter.Vector[] {
+function createCircleVertices(radius: number, sides?: number): Matter.Vector[] {
+	// Use fewer vertices on mobile for better performance
+	const actualSides = sides ?? (isMobile ? 12 : 20);
 	const vertices: Matter.Vector[] = [];
-	const angleStep = (2 * Math.PI) / sides;
+	const angleStep = (2 * Math.PI) / actualSides;
 	
-	for (let i = 0; i < sides; i++) {
+	for (let i = 0; i < actualSides; i++) {
 		const angle = i * angleStep;
 		vertices.push({
 			x: radius * Math.cos(angle),
@@ -45,23 +52,33 @@ export const Game: GameInterface = {
 		menuScreen: document.getElementById('menu-screen'),
 	},
 	cache: { highscore: 0 },
-	sounds: {
-		click: new Audio('./assets/click.mp3'),
-		pop0: new Audio('./assets/pop0.mp3'),
-		pop1: new Audio('./assets/pop1.mp3'),
-		pop2: new Audio('./assets/pop2.mp3'),
-		pop3: new Audio('./assets/pop3.mp3'),
-		pop4: new Audio('./assets/pop4.mp3'),
-		pop5: new Audio('./assets/pop5.mp3'),
-		pop6: new Audio('./assets/pop6.mp3'),
-		pop7: new Audio('./assets/pop7.mp3'),
-		pop8: new Audio('./assets/pop8.mp3'),
-		pop9: new Audio('./assets/pop9.mp3'),
-		pop10: new Audio('./assets/pop10.mp3'),
-	},
+	sounds: (() => {
+		// Preload audio for better performance on mobile
+		const createAudio = (src: string): HTMLAudioElement => {
+			const audio = new Audio(src);
+			audio.preload = 'auto';
+			return audio;
+		};
+		
+		return {
+			click: createAudio('./assets/click.mp3'),
+			pop0: createAudio('./assets/pop0.mp3'),
+			pop1: createAudio('./assets/pop1.mp3'),
+			pop2: createAudio('./assets/pop2.mp3'),
+			pop3: createAudio('./assets/pop3.mp3'),
+			pop4: createAudio('./assets/pop4.mp3'),
+			pop5: createAudio('./assets/pop5.mp3'),
+			pop6: createAudio('./assets/pop6.mp3'),
+			pop7: createAudio('./assets/pop7.mp3'),
+			pop8: createAudio('./assets/pop8.mp3'),
+			pop9: createAudio('./assets/pop9.mp3'),
+			pop10: createAudio('./assets/pop10.mp3'),
+		};
+	})(),
 	bgm: (() => {
 		const music = new Audio('./assets/music/bgm/music.webm');
 		music.loop = true;
+		music.preload = 'auto';
 		return music;
 	})(),
 	audioVolume: parseFloat(localStorage.getItem('audioVolume') || '0.7'),

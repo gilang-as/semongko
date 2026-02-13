@@ -3,7 +3,7 @@ import { Game } from './game';
 import { engine, runner, render, gameStatics, mouseConstraint } from './physics';
 import { loseHeight, previewBallHeight } from './constants';
 import { GameStates, FruitBody } from './types';
-import { rand } from './utils';
+import { rand, audioPool } from './utils';
 
 const { Render, Runner, Composite, Bodies, Events } = Matter;
 
@@ -171,9 +171,7 @@ function restartGame(): void {
  */
 Game.startGame = function(): void {
 	if (Game.audioVolume > 0) {
-		const clickSound = Game.sounds.click.cloneNode() as HTMLAudioElement;
-		clickSound.volume = Game.audioVolume;
-		clickSound.play().catch(() => {});
+		audioPool.play(Game.sounds.click, Game.audioVolume);
 	}
 
 	// Start background music
@@ -271,9 +269,7 @@ Game.startGame = function(): void {
 
 			// Play merge sound
 			if (Game.audioVolume > 0) {
-				const popSound = Game.sounds[`pop${fruitA.sizeIndex}`].cloneNode() as HTMLAudioElement;
-				popSound.volume = Game.audioVolume;
-				popSound.play().catch(() => {});
+				audioPool.play(Game.sounds[`pop${fruitA.sizeIndex}`], Game.audioVolume);
 			}
 			
 			// Remove old fruits and add merged fruit
@@ -331,9 +327,7 @@ Game.addFruit = function(x: number): void {
 	if (Game.stateIndex !== GameStates.READY) return;
 
 	if (Game.audioVolume > 0) {
-		const clickSound = Game.sounds.click.cloneNode() as HTMLAudioElement;
-		clickSound.volume = Game.audioVolume;
-		clickSound.play().catch(() => {});
+		audioPool.play(Game.sounds.click, Game.audioVolume);
 	}
 
 	Game.stateIndex = GameStates.DROP;

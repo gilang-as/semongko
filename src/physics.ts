@@ -5,14 +5,33 @@ import { wallPad, statusBarHeight, friction, GAME_WIDTH, GAME_HEIGHT } from './c
 const { Engine, Render, Runner, Bodies } = Matter;
 
 /**
- * Matter.js Physics Engine
+ * Detect mobile device for performance optimizations
  */
-export const engine = Engine.create();
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 
 /**
- * Matter.js Runner - handles game loop
+ * Matter.js Physics Engine with optimizations
  */
-export const runner = Runner.create();
+export const engine = Engine.create({
+	enableSleeping: true, // Enable sleeping for better performance
+});
+
+// Optimize engine for mobile
+if (isMobile) {
+	engine.timing.timeScale = 1;
+	engine.constraintIterations = 2; // Reduced from default 2
+	engine.positionIterations = 4; // Reduced from default 6
+	engine.velocityIterations = 2; // Reduced from default 4
+}
+
+/**
+ * Matter.js Runner - handles game loop with mobile optimization
+ */
+export const runner = Runner.create({
+	delta: 1000 / 60, // Target 60 FPS
+	isFixed: false,
+	maxFrameTime: isMobile ? 33 : 16.667, // Cap frame time on mobile to prevent lag spikes
+});
 
 /**
  * Matter.js Renderer - handles canvas rendering
@@ -24,7 +43,10 @@ export const render = Render.create({
 		width: GAME_WIDTH,
 		height: GAME_HEIGHT,
 		wireframes: false,
-		background: '#ffdcae'
+		background: '#ffdcae',
+		showAngleIndicator: false, // Disable for performance
+		showCollisions: false, // Disable for performance
+		showSleeping: false, // Disable sleeping visual effect (no fading)
 	}
 });
 

@@ -30,7 +30,6 @@ if (isMobile) {
 export const runner = Runner.create({
 	delta: 1000 / 60, // Target 60 FPS
 	isFixed: false,
-	maxFrameTime: isMobile ? 33 : 16.667, // Cap frame time on mobile to prevent lag spikes
 });
 
 /**
